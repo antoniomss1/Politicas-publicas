@@ -1,0 +1,83 @@
+Sub ExtrairMetasPPA_Final_Corrigida()
+    Dim wsOrigem As Worksheet, wsDestino As Worksheet
+    Dim linhaOrigem As Long, ultimaLinha As Long, linhaDestino As Long
+    Dim conteudoA As String, conteudoB As String, textoCompleto As String
+    Dim partes() As String, valorAbaixo As String
+    
+    ' 1. Configuração de Planilhas
+    On Error Resume Next
+    Set wsOrigem = ThisWorkbook.Worksheets("PPA")
+    If wsOrigem Is Nothing Then
+        MsgBox "Aba 'PPA' não encontrada! Verifique o nome da aba.", vbCritical
+        Exit Sub
+    End If
+    
+    Set wsDestino = ThisWorkbook.Worksheets("Metas")
+    If wsDestino Is Nothing Then
+        Set wsDestino = ThisWorkbook.Worksheets.Add(After:=wsOrigem)
+        wsDestino.Name = "Metas"
+    End If
+    On Error GoTo 0
+    
+    wsDestino.Cells.Clear
+    wsDestino.Range("A1:F1").Value = Array("Programa", "Unid. Medida", "Esperado K", "Esperado U", "Esperado AK", "Esperado BI")
+    linhaDestino = 2
+    ultimaLinha = wsOrigem.UsedRange.Rows.Count + wsOrigem.UsedRange.Row - 1
+
+    ' 2. Loop de Extração
+    For linhaOrigem = 1 To ultimaLinha
+        conteudoA = wsOrigem.Cells(linhaOrigem, 1).Value
+        conteudoB = wsOrigem.Cells(linhaOrigem, 2).Value
+        
+        ' --- BUSCA PROGRAMA ---
+        If InStr(1, conteudoA, "Programa:", vbTextCompare) > 0 Or _
+           InStr(1, conteudoB, "Programa:", vbTextCompare) > 0 Then
+            
+            textoCompleto = IIf(InStr(1, conteudoA, "Programa:", vbTextCompare) > 0, conteudoA, conteudoB)
+            partes = Split(textoCompleto, "Programa:")
+            
+            If UBound(partes) >= 1 Then
+                If InStr(partes(1), vbLf) > 0 Then
+                    wsDestino.Cells(linhaDestino, 1).Value = Trim(Split(partes(1), vbLf)(0))
+                Else
+                    wsDestino.Cells(linhaDestino, 1).Value = Trim(partes(1))
+                End If
+            End If
+            
+        ' --- BUSCA UNID. MEDIDA (Correção do Erro 9 aqui) ---
+        ElseIf InStr(1, conteudoA, "Unid. Medida", vbTextCompare) > 0 Or _
+               InStr(1, conteudoB, "Unid. Medida", vbTextCompare) > 0 Then
+            
+            valorAbaixo = wsOrigem.Cells(linhaOrigem + 1, 1).Value
+            ' Só tenta dar o Split se a célula de baixo não estiver vazia
+            If Trim(valorAbaixo) <> "" Then
+                If InStr(valorAbaixo, vbLf) > 0 Then
+                    wsDestino.Cells(linhaDestino, 2).Value = Trim(Split(valorAbaixo, vbLf)(0))
+                Else
+                    wsDestino.Cells(linhaDestino, 2).Value = Trim(valorAbaixo)
+                End If
+            End If
+            
+        ' --- BUSCA ESPERADO ---
+        ElseIf InStr(1, conteudoA, "Esperado", vbTextCompare) > 0 Then
+            wsDestino.Cells(linhaDestino, 3).Value = wsOrigem.Cells(linhaOrigem + 1, "E").Value
+            wsDestino.Cells(linhaDestino, 4).Value = wsOrigem.Cells(linhaOrigem + 1, "R").Value
+            wsDestino.Cells(linhaDestino, 5).Value = wsOrigem.Cells(linhaOrigem + 1, "AF").Value
+            wsDestino.Cells(linhaDestino, 6).Value = wsOrigem.Cells(linhaOrigem + 1, "BB").Value
+            linhaDestino = linhaDestino + 1
+            
+        ElseIf InStr(1, conteudoB, "Esperado", vbTextCompare) > 0 Then
+            wsDestino.Cells(linhaDestino, 3).Value = wsOrigem.Cells(linhaOrigem + 1, "K").Value
+            wsDestino.Cells(linhaDestino, 4).Value = wsOrigem.Cells(linhaOrigem + 1, "U").Value
+            wsDestino.Cells(linhaDestino, 5).Value = wsOrigem.Cells(linhaOrigem + 1, "AK").Value
+            wsDestino.Cells(linhaDestino, 6).Value = wsOrigem.Cells(linhaOrigem + 1, "BI").Value
+            linhaDestino = linhaDestino + 1
+        End If
+    Next linhaOrigem
+
+    wsDestino.Columns("A:F").AutoFit
+    MsgBox "Extração Finalizada!", vbInformation
+End Sub
+
+
+

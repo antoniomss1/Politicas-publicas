@@ -1,0 +1,43 @@
+Sub MesclarProgramasRepetidosSeguro()
+    Dim ws As Worksheet
+    Dim r As Long, col As Integer, ultimaLinha As Long
+    Dim valorAtual As String, valorAcima As String
+    
+    Set ws = ThisWorkbook.ActiveSheet
+    ultimaLinha = ws.Cells(ws.Rows.Count, 2).End(xlUp).Row
+    
+    ' 1. Ordena para agrupar os repetidos
+    ws.Sort.SortFields.Clear
+    ws.Sort.SortFields.Add Key:=Range("B2:B" & ultimaLinha), Order:=xlAscending
+    With ws.Sort
+        .SetRange Range("A1:M" & ultimaLinha): .Header = xlYes: .Apply
+    End With
+    
+    ' 2. Loop de baixo para cima
+    For r = ultimaLinha To 3 Step -1
+        ' CStr evita o erro 13 ao converter qualquer conteúdo (até erro) em texto
+        If CStr(ws.Cells(r, 2).Value) = CStr(ws.Cells(r - 1, 2).Value) And CStr(ws.Cells(r, 2).Value) <> "" Then
+            
+            For col = 1 To 13
+                If col <> 2 Then
+                    ' IsError checa se a célula tem #N/D ou #VALOR! para não travar
+                    If Not IsError(ws.Cells(r, col)) And Not IsError(ws.Cells(r - 1, col)) Then
+                        valorAtual = Trim(CStr(ws.Cells(r, col).Value))
+                        valorAcima = Trim(CStr(ws.Cells(r - 1, col).Value))
+                        
+                        If valorAtual <> "" And valorAtual <> valorAcima Then
+                            If valorAcima <> "" Then
+                                ws.Cells(r - 1, col).Value = valorAcima & "; " & valorAtual
+                            Else
+                                ws.Cells(r - 1, col).Value = valorAtual
+                            End If
+                        End If
+                    End If
+                End If
+            Next col
+            ws.Rows(r).Delete
+        End If
+    Next r
+    MsgBox "Concluído!", vbInformation
+End Sub
+

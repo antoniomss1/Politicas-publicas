@@ -1,0 +1,52 @@
+Sub CriarResumoEstruturadoExato()
+    Dim wsOrigem As Worksheet
+    Dim wsDestino As Worksheet
+    Dim linhaOrigem As Long, ultimaLinha As Long
+    Dim linhaDestino As Long
+    Dim valorCelula As String
+    
+    ' Configura a planilha de origem (verifique se o nome está idêntico)
+    Set wsOrigem = ThisWorkbook.Worksheets("Tabela-dois-pontos")
+    
+    ' Cria ou limpa a planilha Resumo
+    On Error Resume Next
+    Set wsDestino = ThisWorkbook.Worksheets("Resumo")
+    If wsDestino Is Nothing Then
+        Set wsDestino = ThisWorkbook.Worksheets.Add(After:=wsOrigem)
+        wsDestino.Name = "Resumo"
+    End If
+    On Error GoTo 0
+    wsDestino.Cells.Clear
+    
+    ' Cabeçalhos
+    wsDestino.Range("A1:C1").Value = Array("Programa", "Público Alvo", "Objetivo")
+    linhaDestino = 2
+    
+    ultimaLinha = wsOrigem.Cells(wsOrigem.Rows.Count, "B").End(xlUp).Row
+    
+    ' Percorre a Coluna B da origem procurando os termos exatos
+    For linhaOrigem = 1 To ultimaLinha
+        ' Trim remove espaços acidentais no início ou fim
+        valorCelula = Trim(wsOrigem.Cells(linhaOrigem, "B").Value)
+        
+        ' 1. Se a célula for EXATAMENTE "Programa"
+        If valorCelula = "Programa" Then
+            wsDestino.Cells(linhaDestino, 1).Value = wsOrigem.Cells(linhaOrigem, "C").Value
+        
+        ' 2. Se a célula for EXATAMENTE "Público Alvo"
+        ElseIf valorCelula = "Público Alvo" Then
+            ' Pega o valor da LINHA DE BAIXO na coluna C
+            wsDestino.Cells(linhaDestino, 2).Value = wsOrigem.Cells(linhaOrigem + 1, "C").Value
+            
+        ' 3. Se a célula for EXATAMENTE "Objetivo"
+        ElseIf valorCelula = "Objetivo" Then
+            wsDestino.Cells(linhaDestino, 3).Value = wsOrigem.Cells(linhaOrigem, "C").Value
+            ' Só pula para a próxima linha do resumo depois de preencher o Objetivo
+            linhaDestino = linhaDestino + 1
+        End If
+    Next linhaOrigem
+
+    wsDestino.Columns("A:C").AutoFit
+    MsgBox "Resumo estruturado concluído com sucesso!", vbInformation
+End Sub
+

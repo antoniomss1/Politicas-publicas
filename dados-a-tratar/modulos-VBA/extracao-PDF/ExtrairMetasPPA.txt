@@ -1,0 +1,70 @@
+Sub ExtrairMetasPPA()
+    Dim wsOrigem As Worksheet, wsDestino As Worksheet
+    Dim linhaOrigem As Long, ultimaLinha As Long, linhaDestino As Long
+    Dim valorA As String, valorB As String, textoProg As String
+    
+    ' 1. Configuração de Planilhas (Aba de origem renomeada para PPA)
+    On Error Resume Next
+    Set wsOrigem = ThisWorkbook.Worksheets("PPA")
+    If wsOrigem Is Nothing Then
+        MsgBox "A aba 'PPA' não foi encontrada! Verifique o nome.", vbCritical
+        Exit Sub
+    End If
+    
+    Set wsDestino = ThisWorkbook.Worksheets("Metas")
+    If wsDestino Is Nothing Then
+        Set wsDestino = ThisWorkbook.Worksheets.Add(After:=wsOrigem)
+        wsDestino.Name = "Metas"
+    End If
+    On Error GoTo 0
+    
+    wsDestino.Cells.Clear
+    wsDestino.Range("A1:F1").Value = Array("Programa", "Unid. Medida", "Esperado K", "Esperado U", "Esperado AK", "Esperado BI")
+    linhaDestino = 2
+    
+    ' Encontra a última linha real com dados
+    ultimaLinha = wsOrigem.UsedRange.Rows.Count + wsOrigem.UsedRange.Row - 1
+
+    ' 2. Loop de Extração com busca insensível a maiúsculas (UCase)
+    For linhaOrigem = 1 To ultimaLinha
+        ' UCase converte tudo para MAIÚSCULO para comparar sem erro
+        valorA = UCase(Trim(wsOrigem.Cells(linhaOrigem, 1).Value))
+        valorB = UCase(Trim(wsOrigem.Cells(linhaOrigem, 2).Value))
+        
+        ' --- BUSCA PROGRAMA ---
+        If valorA = "PROGRAMA" Or valorB = "PROGRAMA" Then
+            textoProg = wsOrigem.Cells(linhaOrigem, 3).Value
+            If InStr(textoProg, vbLf) > 0 Then
+                wsDestino.Cells(linhaDestino, 1).Value = Split(textoProg, vbLf)(0)
+            Else
+                wsDestino.Cells(linhaDestino, 1).Value = textoProg
+            End If
+            
+        ' --- BUSCA UNID. MEDIDA ---
+        ElseIf valorA = "UNID. MEDIDA" Or valorB = "UNID. MEDIDA" Then
+            wsDestino.Cells(linhaDestino, 2).Value = wsOrigem.Cells(linhaOrigem, 3).Value
+            
+        ' --- BUSCA ESPERADO (Lógica Condicional de Colunas) ---
+        ElseIf valorA = "ESPERADO" Then
+            ' Se achou na Coluna A: pega de E, R, AF, BB
+            wsDestino.Cells(linhaDestino, 3).Value = wsOrigem.Cells(linhaOrigem + 1, "E").Value
+            wsDestino.Cells(linhaDestino, 4).Value = wsOrigem.Cells(linhaOrigem + 1, "R").Value
+            wsDestino.Cells(linhaDestino, 5).Value = wsOrigem.Cells(linhaOrigem + 1, "AF").Value
+            wsDestino.Cells(linhaDestino, 6).Value = wsOrigem.Cells(linhaOrigem + 1, "BB").Value
+            linhaDestino = linhaDestino + 1
+            
+        ElseIf valorB = "ESPERADO" Then
+            ' Se achou na Coluna B: pega de K, U, AK, BI
+            wsDestino.Cells(linhaDestino, 3).Value = wsOrigem.Cells(linhaOrigem + 1, "K").Value
+            wsDestino.Cells(linhaDestino, 4).Value = wsOrigem.Cells(linhaOrigem + 1, "U").Value
+            wsDestino.Cells(linhaDestino, 5).Value = wsOrigem.Cells(linhaOrigem + 1, "AK").Value
+            wsDestino.Cells(linhaDestino, 6).Value = wsOrigem.Cells(linhaOrigem + 1, "BI").Value
+            linhaDestino = linhaDestino + 1
+        End If
+    Next linhaOrigem
+
+    wsDestino.Columns("A:F").AutoFit
+    MsgBox "Processo concluído na aba Metas!", vbInformation
+End Sub
+
+

@@ -1,0 +1,35 @@
+Sub ConsolidarObjetivosVazios()
+    Dim ws As Worksheet
+    Dim r As Long
+    Dim ultimaLinha As Long
+    
+    ' Ajuste o nome para a planilha onde você está trabalhando
+    Set ws = ThisWorkbook.ActiveSheet
+    
+    ' Descobre a última linha baseada na coluna E (que tem o texto)
+    ultimaLinha = ws.Cells(ws.Rows.Count, "E").End(xlUp).Row
+    
+    ' Percorremos de baixo para cima para que a exclusão de linhas
+    ' não quebre a contagem do loop
+    For r = ultimaLinha To 2 Step -1
+        
+        ' Verifica se a célula na Coluna C está vazia
+        If Trim(ws.Cells(r, "C").Value) = "" Then
+            
+            ' Pega o valor da Coluna E atual e concatena na linha de cima (anterior)
+            If ws.Cells(r - 1, "E").Value <> "" Then
+                ws.Cells(r - 1, "E").Value = ws.Cells(r - 1, "E").Value & "; " & ws.Cells(r, "E").Value
+            Else
+                ws.Cells(r - 1, "E").Value = ws.Cells(r, "E").Value
+            End If
+            
+            ' Deleta a linha atual que estava vazia na Coluna C
+            ws.Rows(r).Delete
+            
+        End If
+    Next r
+    
+    MsgBox "Consolidação concluída!", vbInformation
+End Sub
+
+

@@ -1,0 +1,49 @@
+Sub CriarResumoEstruturado()
+    Dim wsOrigem As Worksheet
+    Dim wsDestino As Worksheet
+    Dim linhaOrigem As Long, ultimaLinha As Long
+    Dim linhaDestino As Long
+    Dim termo As String
+    
+    ' Configura as planilhas (Ajuste os nomes se necessário)
+    Set wsOrigem = ThisWorkbook.Worksheets("Tabela-dois-pontos")
+    
+    ' Cria ou limpa a planilha Resumo
+    On Error Resume Next
+    Set wsDestino = ThisWorkbook.Worksheets("Resumo")
+    If wsDestino Is Nothing Then
+        Set wsDestino = ThisWorkbook.Worksheets.Add(After:=wsOrigem)
+        wsDestino.Name = "Resumo"
+    End If
+    On Error GoTo 0
+    wsDestino.Cells.Clear
+    
+    ' Cabeçalhos
+    wsDestino.Range("A1:C1").Value = Array("Programa", "Público Alvo", "Objetivo")
+    linhaDestino = 2
+    
+    ultimaLinha = wsOrigem.Cells(wsOrigem.Rows.Count, "B").End(xlUp).Row
+    
+    ' Percorre a Coluna B da origem
+    For linhaOrigem = 1 To ultimaLinha
+        termo = Trim(wsOrigem.Cells(linhaOrigem, "B").Value)
+        
+        ' 1. Se achar "Programa", inicia uma NOVA LINHA no resumo
+        If InStr(1, termo, "Programa", vbTextCompare) > 0 Then
+            wsDestino.Cells(linhaDestino, 1).Value = wsOrigem.Cells(linhaOrigem, "C").Value
+        
+        ' 2. Se achar "Público Alvo", pega o valor da LINHA DE BAIXO
+        ElseIf InStr(1, termo, "Público Alvo", vbTextCompare) > 0 Then
+            wsDestino.Cells(linhaDestino, 2).Value = wsOrigem.Cells(linhaOrigem + 1, "B").Value
+            
+        ' 3. Se achar "Objetivo", pega o valor da Coluna C e PULA para a próxima linha do resumo
+        ElseIf InStr(1, termo, "Objetivo", vbTextCompare) > 0 Then
+            wsDestino.Cells(linhaDestino, 3).Value = wsOrigem.Cells(linhaOrigem, "C").Value
+            linhaDestino = linhaDestino + 1 ' Só muda de linha no resumo após fechar o bloco do Objetivo
+        End If
+    Next linhaOrigem
+
+    wsDestino.Columns("A:C").AutoFit
+    MsgBox "Resumo concluído!", vbInformation
+End Sub
+
